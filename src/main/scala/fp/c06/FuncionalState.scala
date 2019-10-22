@@ -1,4 +1,4 @@
-package c06
+package fp.c06
 
 trait RNG {
   def nextInt: (Int, RNG)
