@@ -27,13 +27,21 @@ object C2 {
     }
 
   // c2.3
-  def curry[A, B, C](f: (A, B) => C): A => (B => C) = a => f(a, _)
+  def curry[A, B, C](f: (A, B) => C): A => (B => C) = { a =>
+    f(a, _)
+  }
 
   // c2.4
-  def uncurry[A, B, C](f: A => B => C): (A, B) => C = (a, b) => f(a)(b)
+  def uncurry[A, B, C](f: A => B => C): (A, B) => C = { (a, b) =>
+    f(a)(b)
+  }
 
   // c2.5
-  def compose[A, B, C](f: B => C, g: A => B): A => C = a => f(g(a))
+  def compose[A, B, C](f: B => C, g: A => B): A => C = { a =>
+    f(g(a))
+  }
 
-  def andThen[A, B, C](f: A => B, g: B => C): A => C = a => g(f(a))
+  def andThen[A, B, C](f: A => B, g: B => C): A => C = { a =>
+    g(f(a))
+  }
 }
