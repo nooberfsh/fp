@@ -15,7 +15,7 @@ class C2Test extends FunSuite with DiagrammedAssertions {
   }
 
   test("isSorted") {
-    val compare = (a: Int, b: Int) => a < b
+    val compare = (a: Int, b: Int) => a <= b
     assert(isSorted(Array(), compare) === true)
     assert(isSorted(Array(1), compare) === true)
 
