@@ -142,4 +142,43 @@ object C3 {
       case Cons(_, xs)             => hasSubsequence(xs, sub)
     }
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  sealed trait Tree[+A] {
+    // c3.25
+    def size: Int = this match {
+      case Leaf(_)      => 1
+      case Branch(l, r) => 1 + l.size + r.size
+    }
+
+    // c3.26
+    def maximum(implicit ordering: Ordering[A]): A = this match {
+      case Leaf(d)      => d
+      case Branch(l, r) => ordering.max(l.maximum, r.maximum)
+    }
+
+    // c3.27
+    def depth: Int = this match {
+      case Leaf(_)      => 1
+      case Branch(l, r) => l.depth max r.depth + 1
+    }
+
+    // c3.28
+    def map[B](f: A => B): Tree[B] = this match {
+      case Leaf(a)      => Leaf(f(a))
+      case Branch(l, r) => Branch(l.map(f), r.map(f))
+    }
+
+    // c3.29
+    def fold[B](b: B)(f: (A, B) => B): B = this match {
+      case Leaf(a) => f(a, b)
+      case Branch(l, r) =>
+        val b1 = l.fold(b)(f)
+        r.fold(b1)(f)
+    }
+  }
+  case class Leaf[A](value: A) extends Tree[A]
+  case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
+
 }
