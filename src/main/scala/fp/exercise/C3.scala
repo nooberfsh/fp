@@ -1,10 +1,17 @@
 package fp.exercise
 
-import fp.c03._
-
 import scala.annotation.tailrec
 
 object C3 {
+  sealed trait List[+A]
+  case object Nil extends List[Nothing]
+  case class Cons[+A](head: A, tail: List[A]) extends List[A]
+
+  object List {
+    def apply[A](as: A*): List[A] =
+      if (as.isEmpty) Nil else Cons(as.head, apply(as.tail: _*))
+  }
+
   // c3.2
   def tail[A](as: List[A]): Option[List[A]] = as match {
     case Nil         => None
