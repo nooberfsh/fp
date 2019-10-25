@@ -147,7 +147,7 @@ object C3 {
 
   sealed trait Tree[+A] {
     // c3.25
-    def size: Int = fold(_ => 1)(_ + _)
+    def size: Int = fold(_ => 1)((l, r) => l + r + 1)
 
     // FIXME: covariant type A occurs in invariant position in type Ordering[A] of value ordering
     // c3.26
@@ -157,7 +157,7 @@ object C3 {
 //    }
 
     // c3.27
-    def depth: Int = fold(_ => 1)((l, r) => l max r + 1)
+    def depth: Int = fold(_ => 1)((l, r) => (l max r) + 1)
 
     // c3.28
     def map[B](f: A => B): Tree[B] =
@@ -181,7 +181,7 @@ object C3 {
 
     def size: Int = fold(_ => 1)((_, l, r) => l + r + 1)
 
-    def depth: Int = fold(_ => 1)((_, l, r) => l max r + 1)
+    def depth: Int = fold(_ => 1)((_, l, r) => (l max r) + 1)
 
     def map[B](f: A => B): Tree2[B] =
       fold(a => Leaf2(f(a)): Tree2[B])((a, b1, b2) => Branch2(f(a), b1, b2))
@@ -199,7 +199,7 @@ object C3 {
 
     def size: Int = fold(1)((_, l, r) => l + r + 1)
 
-    def depth: Int = fold(1)((_, l, r) => l max r + 1)
+    def depth: Int = fold(1)((_, l, r) => (l max r) + 1)
 
     def map[B](f: A => B): Tree3[B] =
       fold(Leaf3: Tree3[B])((a, b1, b2) => Branch3(f(a), b1, b2))
