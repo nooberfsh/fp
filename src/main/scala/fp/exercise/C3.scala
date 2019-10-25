@@ -147,38 +147,64 @@ object C3 {
 
   sealed trait Tree[+A] {
     // c3.25
-    def size: Int = this match {
-      case Leaf(_)      => 1
-      case Branch(l, r) => 1 + l.size + r.size
-    }
+    def size: Int = fold(_ => 1)(_ + _)
 
+    // FIXME: covariant type A occurs in invariant position in type Ordering[A] of value ordering
     // c3.26
-    def maximum(implicit ordering: Ordering[A]): A = this match {
-      case Leaf(d)      => d
-      case Branch(l, r) => ordering.max(l.maximum, r.maximum)
-    }
+//    def maximum(implicit ordering: Ordering[A]): A = this match {
+//      case Leaf(d)      => d
+//      case Branch(l, r) => ordering.max(l.maximum, r.maximum)
+//    }
 
     // c3.27
-    def depth: Int = this match {
-      case Leaf(_)      => 1
-      case Branch(l, r) => l.depth max r.depth + 1
-    }
+    def depth: Int = fold(_ => 1)((l, r) => l max r + 1)
 
     // c3.28
-    def map[B](f: A => B): Tree[B] = this match {
-      case Leaf(a)      => Leaf(f(a))
-      case Branch(l, r) => Branch(l.map(f), r.map(f))
-    }
+    def map[B](f: A => B): Tree[B] =
+      fold(a => Leaf(f(a)): Tree[B])((t1, t2) => Branch(t1, t2))
 
     // c3.29
-    def fold[B](b: B)(f: (A, B) => B): B = this match {
-      case Leaf(a) => f(a, b)
-      case Branch(l, r) =>
-        val b1 = l.fold(b)(f)
-        r.fold(b1)(f)
+    def fold[B](init: A => B)(f: (B, B) => B): B = this match {
+      case Leaf(a)      => init(a)
+      case Branch(l, r) => f(l.fold(init)(f), r.fold(init)(f))
     }
   }
   case class Leaf[A](value: A) extends Tree[A]
   case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
 
+  // branch has a value
+  sealed trait Tree2[+A] {
+    def fold[B](init: A => B)(f: (A, B, B) => B): B = this match {
+      case Leaf2(a)           => init(a)
+      case Branch2(a, t1, t2) => f(a, t1.fold(init)(f), t2.fold(init)(f))
+    }
+
+    def size: Int = fold(_ => 1)((_, l, r) => l + r + 1)
+
+    def depth: Int = fold(_ => 1)((_, l, r) => l max r + 1)
+
+    def map[B](f: A => B): Tree2[B] =
+      fold(a => Leaf2(f(a)): Tree2[B])((a, b1, b2) => Branch2(f(a), b1, b2))
+  }
+  case class Branch2[A](value: A, left: Tree2[A], right: Tree2[A])
+      extends Tree2[A]
+  case class Leaf2[A](value: A) extends Tree2[A]
+
+  // leaf has no value
+  sealed trait Tree3[+A] {
+    def fold[B](b: B)(f: (A, B, B) => B): B = this match {
+      case Leaf3              => b
+      case Branch3(a, t1, t2) => f(a, t1.fold(b)(f), t2.fold(b)(f))
+    }
+
+    def size: Int = fold(1)((_, l, r) => l + r + 1)
+
+    def depth: Int = fold(1)((_, l, r) => l max r + 1)
+
+    def map[B](f: A => B): Tree3[B] =
+      fold(Leaf3: Tree3[B])((a, b1, b2) => Branch3(f(a), b1, b2))
+  }
+  case class Branch3[A](value: A, left: Tree3[A], right: Tree3[A])
+      extends Tree3[A]
+  case object Leaf3 extends Tree3[Nothing]
 }
