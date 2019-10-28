@@ -158,7 +158,6 @@ object C6 {
   object State {
     def unit[S, A](a: A): State[S, A] = State(s => (a, s))
 
-
     def sequence[S, A](xs: List[State[S, A]]): State[S, List[A]] =
       xs.foldLeft(unit[S, List[A]](Nil))((b, a) => b.map2(a)((l, h) => h :: l))
         .map(_.reverse)
