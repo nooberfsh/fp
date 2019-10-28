@@ -131,4 +131,26 @@ class C6Test extends FunSuite with DiagrammedAssertions {
     assert(s.num == 6)
   }
 
+  ///////////////// test Machine
+
+  test("machine") {
+    val init = Machine(locked = true, candies = 5, coins= 10)
+    val inputs = List(Coin, Turn, Coin, Turn)
+    val ((coin, candy), s)  = Machine.simulateMachine(inputs)(init)
+    assert(coin === 12)
+    assert(candy === 3)
+    assert(s.coins == 12)
+    assert(s.candies === 3)
+  }
+
+
+  test("machine out of candy") {
+    val init = Machine(locked = true, candies = 1, coins= 10)
+    val inputs = List(Coin, Turn, Coin, Turn)
+    val ((coin, candy), s)  = Machine.simulateMachine(inputs)(init)
+    assert(coin === 11)
+    assert(candy === 0)
+    assert(s.coins == 11)
+    assert(s.candies === 0)
+  }
 }

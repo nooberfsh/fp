@@ -200,7 +200,7 @@ object C6 {
   case object Turn extends Input
   case class Machine(locked: Boolean, candies: Int, coins: Int)
 
-  object Machine2 {
+  object Machine {
     import State.{sequence => xsequence, _}
 
     def update: Input => Machine => Machine =
