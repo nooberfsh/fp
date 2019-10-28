@@ -22,7 +22,7 @@ object C6 {
   def nonNegativeInt(rng: RNG): (Int, RNG) =
     rng.nextInt match {
       case (i, r) if i >= 0 => (i, r)
-      case (_, r) => nonNegativeInt(r)
+      case (_, r)           => nonNegativeInt(r)
     }
 
   // c6.2
@@ -53,9 +53,10 @@ object C6 {
 
   // c6.3
   def ints(count: Int)(rng: RNG): (List[Int], RNG) =
-    (1 to count).foldLeft((Nil: List[Int], rng)) { case ((l, r), _) =>
-      val (i, r2) = r.nextInt
-      (i :: l, r2)
+    (1 to count).foldLeft((Nil: List[Int], rng)) {
+      case ((l, r), _) =>
+        val (i, r2) = r.nextInt
+        (i :: l, r2)
     }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -73,20 +74,23 @@ object C6 {
     }
 
   // c6.5
-  val doubleWithMap: Rand[Double] = map(nonNegativeInt)(i => i.toDouble / (Int.MaxValue.toDouble + 1))
+  val doubleWithMap: Rand[Double] =
+    map(nonNegativeInt)(i => i.toDouble / (Int.MaxValue.toDouble + 1))
 
   // c6.6
-  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = { rng =>
-    val (a, r1) = ra(rng)
-    val (b, r2) = rb(r1)
-    (f(a, b), r2)
+  def map2[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = {
+    rng =>
+      val (a, r1) = ra(rng)
+      val (b, r2) = rb(r1)
+      (f(a, b), r2)
   }
 
   // c6.7
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] = { rng =>
-    fs.foldLeft((Nil: List[A], rng)) { case ((l, r), rand) =>
-      val (i, r2) = rand(r)
-      (i :: l, r2)
+    fs.foldLeft((Nil: List[A], rng)) {
+      case ((l, r), rand) =>
+        val (i, r2) = rand(r)
+        (i :: l, r2)
     }
   }
 
@@ -120,7 +124,6 @@ object C6 {
   def map2Ext[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
     flatMap(ra)(a => mapExt(rb)(b => f(a, b)))
 
-
   //////////////////////////////////////////////////////////////////////////////
 
   // c6.10
@@ -137,26 +140,34 @@ object C6 {
 
     def apply(s: S): (A, S) = run(s)
 
-    def join[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] = for {
-      a <- this
-      b <- sb
-    } yield f(a, b)
+    def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
+      for {
+        a <- this
+        b <- sb
+      } yield f(a, b)
+
+    def join[B, C](sb: State[S, B]): State[S, (A, B)] = map2(sb)((_, _))
   }
 
   object State {
     def unit[S, A](a: A): State[S, A] = State(s => (a, s))
 
     def sequence[S, A](xs: List[State[S, A]]): State[S, List[A]] =
-      xs.foldRight(unit[S, List[A]](Nil))((a, b) => a.join(b)((i, l) => i :: l))
+      xs.foldRight(unit[S, List[A]](Nil))((a, b) => a.map2(b)((i, l) => i :: l))
 
-    def get[S]: State[S, S] = State { s => (s, s) }
+    def get[S]: State[S, S] = State { s =>
+      (s, s)
+    }
 
-    def set[S](s: S): State[S, Unit] = State { _ => ((), s) }
+    def set[S](s: S): State[S, Unit] = State { _ =>
+      ((), s)
+    }
 
-    def modify[S](f: S => S): State[S, Unit] = for {
-      s <- get
-      _ <- set(f(s))
-    } yield ()
+    def modify[S](f: S => S): State[S, Unit] =
+      for {
+        s <- get
+        _ <- set(f(s))
+      } yield ()
 
     def modify2[S](f: S => S): State[S, Unit] = State { s =>
       val s2 = f(s)
@@ -180,9 +191,10 @@ object C6 {
   }
 
   object Machine {
-    def simulateMachineOne(input: Input): State[Machine, (Int, Int)] = State { m =>
-      val newM = m.accept(input)
-      (newM.current, newM)
+    def simulateMachineOne(input: Input): State[Machine, (Int, Int)] = State {
+      m =>
+        val newM = m.accept(input)
+        (newM.current, newM)
     }
 
     def current: State[Machine, (Int, Int)] = State { m =>
@@ -190,36 +202,39 @@ object C6 {
     }
 
     def simulateMachine(input: List[Input]): State[Machine, (Int, Int)] =
-      input.map(simulateMachineOne).foldLeft(current)((b, a) => b.join(a)((_, a) => a))
+      input
+        .map(simulateMachineOne)
+        .foldLeft(current)((b, a) => b.map2(a)((_, a) => a))
 
   }
-
 
   object Machine2 {
     import State.{sequence => xsequence, _}
 
-    def update = (i: Input) => (s: Machine) =>
-      (i, s) match {
-        case (_, Machine(_, 0, _)) => s
-        case (Coin, Machine(false, _, _)) => s
-        case (Turn, Machine(true, _, _)) => s
-        case (Coin, Machine(true, candy, coin)) =>
-          Machine(false, candy, coin + 1)
-        case (Turn, Machine(false, candy, coin)) =>
-          Machine(true, candy - 1, coin)
+    def update =
+      (i: Input) =>
+        (s: Machine) =>
+          (i, s) match {
+            case (_, Machine(_, 0, _))        => s
+            case (Coin, Machine(false, _, _)) => s
+            case (Turn, Machine(true, _, _))  => s
+            case (Coin, Machine(true, candy, coin)) =>
+              Machine(false, candy, coin + 1)
+            case (Turn, Machine(false, candy, coin)) =>
+              Machine(true, candy - 1, coin)
       }
 
-    def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = for {
-      _ <- xsequence(inputs map (modify[Machine] _ compose update))
-      s <- get
-    } yield (s.coins, s.candies)
+    def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
+      for {
+        _ <- xsequence(inputs map (modify[Machine] _ compose update))
+        s <- get
+      } yield (s.coins, s.candies)
 
-
-    def simulateMachine2(inputs: List[Input]): State[Machine, (Int, Int)] = for {
-      _ <- xsequence(inputs map (i => modify[Machine](update(i))))
-      s <- get
-    } yield (s.coins, s.candies)
+    def simulateMachine2(inputs: List[Input]): State[Machine, (Int, Int)] =
+      for {
+        _ <- xsequence(inputs map (i => modify[Machine](update(i))))
+        s <- get
+      } yield (s.coins, s.candies)
   }
 
 }
-
