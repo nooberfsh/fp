@@ -196,39 +196,14 @@ object C6 {
 
   // c6.11
   sealed trait Input
-
   case object Coin extends Input
-
   case object Turn extends Input
-
-  case class Machine(locked: Boolean, candies: Int, coins: Int) {
-    def accept(input: Input): Machine = ???
-
-    val current: (Int, Int) = (candies, coins)
-  }
-
-  object Machine {
-    def simulateMachineOne(input: Input): State[Machine, (Int, Int)] = State {
-      m =>
-        val newM = m.accept(input)
-        (newM.current, newM)
-    }
-
-    def current: State[Machine, (Int, Int)] = State { m =>
-      (m.current, m)
-    }
-
-    def simulateMachine(input: List[Input]): State[Machine, (Int, Int)] =
-      input
-        .map(simulateMachineOne)
-        .foldLeft(current)((b, a) => b.map2(a)((_, a) => a))
-
-  }
+  case class Machine(locked: Boolean, candies: Int, coins: Int)
 
   object Machine2 {
     import State.{sequence => xsequence, _}
 
-    def update =
+    def update: Input => Machine => Machine =
       (i: Input) =>
         (s: Machine) =>
           (i, s) match {
@@ -236,9 +211,9 @@ object C6 {
             case (Coin, Machine(false, _, _)) => s
             case (Turn, Machine(true, _, _))  => s
             case (Coin, Machine(true, candy, coin)) =>
-              Machine(false, candy, coin + 1)
+              Machine(locked = false, candy, coin + 1)
             case (Turn, Machine(false, candy, coin)) =>
-              Machine(true, candy - 1, coin)
+              Machine(locked = true, candy - 1, coin)
       }
 
     def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
@@ -247,11 +222,10 @@ object C6 {
         s <- get
       } yield (s.coins, s.candies)
 
-    def simulateMachine2(inputs: List[Input]): State[Machine, (Int, Int)] =
+    def _simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] =
       for {
         _ <- xsequence(inputs map (i => modify[Machine](update(i))))
         s <- get
       } yield (s.coins, s.candies)
   }
-
 }
