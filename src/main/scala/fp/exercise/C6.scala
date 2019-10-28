@@ -162,12 +162,12 @@ object C6 {
       xs.foldLeft(unit[S, List[A]](Nil))((b, a) => b.map2(a)((l, h) => h :: l))
         .map(_.reverse)
 
-    // note: state goes from left to right
+    // note: state goes from left to right: s1, s2, s3
     // map2(s1, map2(s2, map2(s3, ...)))
     def _sequence[S, A](xs: List[State[S, A]]): State[S, List[A]] =
       xs.foldRight(unit[S, List[A]](Nil))((a, b) => a.map2(b)((i, l) => i :: l))
 
-    // note: state goes from right to left
+    // note: state goes from right to left: s3, s2, s1
     // map2(map2(map2(s3, ...), s2), s1)
     def sequenceReverse[S, A](xs: List[State[S, A]]): State[S, List[A]] =
       xs.foldRight(unit[S, List[A]](Nil))((a, b) => b.map2(a)((l, i) => i :: l))
