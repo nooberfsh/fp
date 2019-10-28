@@ -11,7 +11,7 @@ object C6 {
   case class SimpleRNG(seed: Long) extends RNG {
     def nextInt: (Int, RNG) = {
       val newSeed = (seed * 0x5DEECE66DL + 0xBL) & 0xFFFFFFFFFFFFL
-      val nextRNG = new SimpleRNG(newSeed)
+      val nextRNG = SimpleRNG(newSeed)
       val n = (newSeed >>> 16).toInt
       (n, nextRNG)
     }
@@ -28,7 +28,7 @@ object C6 {
   // c6.2
   def double(rng: RNG): (Double, RNG) = {
     val (i, r) = nonNegativeInt(rng)
-    ((i.toDouble) / (Int.MaxValue.toDouble + 1), r)
+    (i.toDouble / (Int.MaxValue.toDouble + 1), r)
   }
 
   // c6.3
@@ -133,12 +133,8 @@ object C6 {
       (f(a), newS)
     }
 
-    def flatMap[B](f: A => State[S, B]): State[S, B] = State { s =>
-      val (a, newS) = run(s)
-      f(a).run(newS)
-    }
-
-    def apply(s: S): (A, S) = run(s)
+    def _map[B](f: A => B): State[S, B] =
+      flatMap(a => State.unit(f(a)))
 
     def map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
       for {
@@ -146,14 +142,28 @@ object C6 {
         b <- sb
       } yield f(a, b)
 
+    def _map2[B, C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
+      flatMap(a => sb.map(b => f(a, b)))
+
+    def flatMap[B](f: A => State[S, B]): State[S, B] = State { s =>
+      val (a, newS) = run(s)
+      f(a).run(newS)
+    }
+
+    def apply(s: S): (A, S) = run(s)
+
     def join[B, C](sb: State[S, B]): State[S, (A, B)] = map2(sb)((_, _))
   }
 
   object State {
     def unit[S, A](a: A): State[S, A] = State(s => (a, s))
 
-    def sequence[S, A](xs: List[State[S, A]]): State[S, List[A]] =
+    def sequenceWrong[S, A](xs: List[State[S, A]]): State[S, List[A]] =
       xs.foldRight(unit[S, List[A]](Nil))((a, b) => a.map2(b)((i, l) => i :: l))
+
+    def sequence[S, A](xs: List[State[S, A]]): State[S, List[A]] =
+      xs.foldLeft(unit[S, List[A]](Nil))((b, a) => b.map2(a)((l, h) => h :: l))
+        .map(_.reverse)
 
     def get[S]: State[S, S] = State { s =>
       (s, s)
@@ -169,7 +179,7 @@ object C6 {
         _ <- set(f(s))
       } yield ()
 
-    def modify2[S](f: S => S): State[S, Unit] = State { s =>
+    def _modify[S](f: S => S): State[S, Unit] = State { s =>
       val s2 = f(s)
       ((), s2)
     }
