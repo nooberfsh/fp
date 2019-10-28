@@ -158,19 +158,23 @@ object C6 {
   object State {
     def unit[S, A](a: A): State[S, A] = State(s => (a, s))
 
+    // 要把 状态流转顺序 和 状态转移函数的组合顺序区分开
+    // 状态转移函数的结合顺序由 xs 的 combinator （foldLeft， foldRight） 决定
+    // 状态实际的流转顺序由 StateAction 的 map2 决定(在调用 run 的时候，状态从第一个参数流到第二个参数）
+    // 可以根据程序实际的运行过程画出对应 状态函数组合图, map2 可以对应成 Cons.
+    // sequence: map2(map2(map2(map2(b, s1), s2), s3), ...) 这里两种顺序都是 s1 => s2 => s3 => ...
+    // _sequence: map2(s1, map2(s2, map2(s3, ...))) 这里状态转移函数的组合顺序: ... => s3 => s2 => s1, 但是状态流转顺序: s1 => s2 => s3 => ...
+    // sequenceReverse: map2(map2(map2(map2(b, ...), s3), s2), s1) 这里两种顺序都是 ... => s3 => s2 => s1
     def sequence[S, A](xs: List[State[S, A]]): State[S, List[A]] =
       xs.foldLeft(unit[S, List[A]](Nil))((b, a) => b.map2(a)((l, h) => h :: l))
         .map(_.reverse)
 
-    // note: state goes from left to right: s1, s2, s3
-    // map2(s1, map2(s2, map2(s3, ...)))
     def _sequence[S, A](xs: List[State[S, A]]): State[S, List[A]] =
       xs.foldRight(unit[S, List[A]](Nil))((a, b) => a.map2(b)((i, l) => i :: l))
 
-    // note: state goes from right to left: s3, s2, s1
-    // map2(map2(map2(s3, ...), s2), s1)
     def sequenceReverse[S, A](xs: List[State[S, A]]): State[S, List[A]] =
       xs.foldRight(unit[S, List[A]](Nil))((a, b) => b.map2(a)((l, i) => i :: l))
+
 
     def get[S]: State[S, S] = State { s =>
       (s, s)
