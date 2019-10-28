@@ -158,12 +158,20 @@ object C6 {
   object State {
     def unit[S, A](a: A): State[S, A] = State(s => (a, s))
 
-    def sequenceWrong[S, A](xs: List[State[S, A]]): State[S, List[A]] =
-      xs.foldRight(unit[S, List[A]](Nil))((a, b) => a.map2(b)((i, l) => i :: l))
 
     def sequence[S, A](xs: List[State[S, A]]): State[S, List[A]] =
       xs.foldLeft(unit[S, List[A]](Nil))((b, a) => b.map2(a)((l, h) => h :: l))
         .map(_.reverse)
+
+    // note: state goes from left to right
+    // map2(s1, map2(s2, map2(s3, ...)))
+    def _sequence[S, A](xs: List[State[S, A]]): State[S, List[A]] =
+      xs.foldRight(unit[S, List[A]](Nil))((a, b) => a.map2(b)((i, l) => i :: l))
+
+    // note: state goes from right to left
+    // map2(map2(map2(s3, ...), s2), s1)
+    def sequenceReverse[S, A](xs: List[State[S, A]]): State[S, List[A]] =
+      xs.foldRight(unit[S, List[A]](Nil))((a, b) => b.map2(a)((l, i) => i :: l))
 
     def get[S]: State[S, S] = State { s =>
       (s, s)
