@@ -3,36 +3,35 @@ package fp.exercise
 object C5 {
   sealed trait Stream[+A] {
     def headOption: Option[A] = this match {
-      case Empty => None
-      case Cons(h, t) => Some(h())
+      case Empty      => None
+      case Cons(h, _) => Some(h())
     }
 
     // c5.1
     def toList: List[A] = this match {
-      case Empty => Nil
+      case Empty      => Nil
       case Cons(h, t) => h() :: t().toList
     }
 
     // c5.2
     def take(n: Int): Stream[A] = this match {
-      case Cons(h, t) if n>0 =>  Cons(h, () => t().take(n - 1))
-      case _ => Empty
+      case Cons(h, t) if n > 0 => Cons(h, () => t().take(n - 1))
+      case _                   => Empty
     }
 
     // c5.2
     def drop(n: Int): Stream[A] = this match {
-      case Cons(h, t) if n>0 =>  t().drop(n - 1)
-      case _ => this
+      case Cons(_, t) if n > 0 => t().drop(n - 1)
+      case _                   => this
     }
 
     // c5.3
     def takeWhile(p: A => Boolean): Stream[A] = this match {
       case Cons(h, t) if p(h()) => Stream.cons(h(), t().takeWhile(p))
-      case _ => Empty
+      case _                    => Empty
     }
 
     //////////////////////////////////////////////////////////////////////////////
-
 
   }
   case object Empty extends Stream[Nothing]
