@@ -13,27 +13,26 @@ object C5 {
       case Cons(h, t) => h() :: t().toList
     }
 
-    def foldRight[B](b: B)(f: (A, =>B) => B): B = this match {
-      case Empty => b
-      case Cons(h, t) => f(h(), t().foldRight(b)(f))
+    // c5.2
+    def take(n: Int): Stream[A] = this match {
+      case Cons(h, t) if n>0 =>  Cons(h, () => t().take(n - 1))
+      case _ => Empty
     }
-
 
     // c5.2
-    def take(n: Int): List[A] = {
-      def take(n: Int, stream: Stream[A], acc: List[A]): List[A] = n match {
-        case _ if n <=0 => acc
-        case _ => stream match {
-          case Empty => acc
-          case Cons(h, t) => h() :: take(n - 1, t(), acc)
-        }
-      }
-      take(n, this, Nil)
+    def drop(n: Int): Stream[A] = this match {
+      case Cons(h, t) if n>0 =>  t().drop(n - 1)
+      case _ => this
     }
 
-    def _take(n: Int): List[A] = this.foldRight(Nil: List[A]) { (a, b) =>
-      if (n <= 0) Nil else a :: b
+    // c5.3
+    def takeWhile(p: A => Boolean): Stream[A] = this match {
+      case Cons(h, t) if p(h()) => Stream.cons(h(), t().takeWhile(p))
+      case _ => Empty
     }
+
+    //////////////////////////////////////////////////////////////////////////////
+
 
   }
   case object Empty extends Stream[Nothing]
