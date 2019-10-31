@@ -31,4 +31,32 @@ class C5Test extends FunSuite with DiagrammedAssertions {
     assert(s.takeWhile(f1).toList === List(1, 2))
     assert(s.takeWhile(f2).toList === List())
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+  test("constant") {
+    val s = Stream.constant(2)
+    assert(s.take(2).toList === List(2, 2))
+    assert(s.take(1).toList === List(2))
+    assert(s.take(0).toList === List())
+  }
+
+  test("from") {
+    val s = Stream.from(2)
+    assert(s.take(2).toList === List(2, 3))
+    assert(s.take(1).toList === List(2))
+    assert(s.take(0).toList === List())
+  }
+
+  test("zip") {
+    val s1 = Stream(1, 2, 3)
+    val s2 = Stream(10, 11, 12, 14)
+
+    val s = Stream.zip(s1, s2)(_ + _)
+    assert(s.toList === List(11, 13, 15))
+  }
+
+  test("fibs") {
+    val fib = Stream.fibs.take(8)
+    assert(fib.toList === List(0, 1, 1, 2, 3, 5, 8, 13))
+  }
 }
